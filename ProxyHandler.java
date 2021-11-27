@@ -1,12 +1,12 @@
 import java.io.*;
 import java.net.*;
-import java.security.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 import java.util.HashMap;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.sound.sampled.SourceDataLine;
 
 /**
  * This class handles the requests that pass through the proxy, both incoming and outgoing ones.
@@ -16,14 +16,24 @@ public class ProxyHandler implements Runnable {
 
     private Socket cSocket;
     HashMap<String, File> cache;
+    List<String> blockedWebsites;
     private BufferedWriter serverResponseBW; // Send response from the proxy to the client
     private BufferedReader clientRequestBR; // Read request from the client to the proxy
 
-    public ProxyHandler(Socket cSocket, HashMap<String, File> cache) throws IOException {
+    public ProxyHandler(Socket cSocket, HashMap<String, File> cache, List<String> blockedWebsites) throws IOException {
         this.cSocket = cSocket;
         this.cache = cache;
+        this.blockedWebsites = blockedWebsites;
         serverResponseBW = new BufferedWriter(new OutputStreamWriter(cSocket.getOutputStream()));
         clientRequestBR = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
+    }
+    /**
+     * Check whether a particular website is blocked by the proxy
+     * @param url the url of the website to check
+     * @return ture if the website is blocked, false otherwise
+     */
+    public boolean siteBlocked (String url){
+        return ((this.blockedWebsites.contains(url)) ? true : false);
     }
 
     /**
@@ -51,6 +61,19 @@ public class ProxyHandler implements Runnable {
 
 		// Remove everything after the next space
 		requestURL = requestURL.substring(0, requestURL.indexOf(' '));
+        // Check whether the requested website is blocked
+		if(this.siteBlocked(requestURL.substring(1))){
+			System.out.println("Blocked site requested : " + requestURL);
+			try {
+                String response = "HTTP/1.0 403 Access Forbidden\n";
+                serverResponseBW.write(response);
+                serverResponseBW.flush();
+            } catch (IOException e) {
+                System.out.println("Failed to update client while accessing a forbidden website");
+                e.printStackTrace();
+            }
+			return;
+		}
 
 		// Prepend http:// if necessary to create correct URL
 		if(!requestURL.substring(0,4).equals("http")){
@@ -58,7 +81,6 @@ public class ProxyHandler implements Runnable {
 		}
 
         System.out.println(requestMethod + " " + requestURL);
-
 
         if (requestMethod.equals("GET")) {
             File file = null;
@@ -170,51 +192,28 @@ public class ProxyHandler implements Runnable {
         } catch (NullPointerException e) {
             System.out.println("failed to create a cache file");
         }
-        if (!url.contains("www.bom.gov.au")) {
-            url = "http://www.bom.gov.au" + url.substring(6);
-        }
-        URL urlAddr = new URL(url);
-        //Read a image
-        // if (fileType.contains(".jpg") || fileType.contains(".jpeg") || fileType.contains(".png") || fileType.contains(".gif") || fileType.contains(".ico")) {
-        //     URL newURL = new URL(url);
-        //     URLConnection uConn = newURL.openConnection();
-        //     uConn.setRequestProperty(
-        //     "User-Agent",
-        //     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.65 Safari/537.31");
-        //     BufferedImage img = ImageIO.read(uConn.getInputStream());
 
-        //     if (img == null) {
-        //         serverResponseBW.write("HTTP/1.0 404 NOT FOUND \n" + "\r\n");
-        //         serverResponseBW.flush();
-        //     } else {
-        //         //read text
-        //         serverResponseBW.write("HTTP/1.0 200 OK\n" + "\r\n");
-        //         serverResponseBW.flush();
-        //         // write to cache file
-        //         ImageIO.write(img, fileType.substring(1), cacheFile);
-        //         // write to socket.
-        //         ImageIO.write(img, fileType.substring(1), this.cSocket.getOutputStream());
-        //     }
-        //Read a image
-        if((url.substring(url.lastIndexOf(".")).contains(".jpg"))||(url.substring(url.lastIndexOf(".")).contains(".jpeg"))||(url.substring(url.lastIndexOf(".")).contains(".png"))||(url.substring(url.lastIndexOf(".")).contains(".gif"))){
-            URL image = new URL(url);
-            URLConnection uc = image.openConnection();
-            uc.addRequestProperty("User-Agent",
-                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)");
-            BufferedImage img = ImageIO.read(uc.getInputStream());
-            System.out.println("image"+img);
-            if(img==null){
-                System.out.println("Image " + fileName + " was null");
+        URL urlAddr = new URL(url);
+        // Read a image
+        if (fileType.contains(".jpg") || fileType.contains(".jpeg") || fileType.contains(".png") || fileType.contains(".gif") || fileType.contains(".ico")) {
+            URL newURL = new URL(url);
+            URLConnection uConn = newURL.openConnection();
+            uConn.setRequestProperty(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.65 Safari/537.31");
+            BufferedImage img = ImageIO.read(uConn.getInputStream());
+
+            if (img == null) {
                 serverResponseBW.write("HTTP/1.0 404 NOT FOUND \n" + "\r\n");
                 serverResponseBW.flush();
-            }else{
+            } else {
                 //read text
-                serverResponseBW.write("HTTP/1.0 200 OK\n"  + "\r\n");
+                serverResponseBW.write("HTTP/1.0 200 OK\n" + "\r\n");
                 serverResponseBW.flush();
                 // write to cache file
-                ImageIO.write(img, url.substring(url.lastIndexOf(".")).substring(1),cacheFile);
+                ImageIO.write(img, fileType.substring(1), cacheFile);
                 // write to socket.
-                ImageIO.write(img, url.substring(url.lastIndexOf(".")).substring(1),cSocket.getOutputStream());
+                ImageIO.write(img, fileType.substring(1), this.cSocket.getOutputStream());
             }
         } else {
             URLConnection proxy2Server = (URLConnection) urlAddr.openConnection();
