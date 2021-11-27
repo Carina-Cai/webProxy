@@ -25,10 +25,16 @@ public class WebProxy {
 
         System.out.println("Enter website(s) to blcok (separate by space). Press 'Enter' if nothing to be blocked");
         String sites = scanner.nextLine();
-        String[] splited = sites.split("\\s+");
-        for (String s : splited) {
-            blockedWebsites.add(s);
-            System.out.println(s + " blocked successfully");
+        
+        if (sites.isEmpty()) {
+            System.out.println("Nothing is blocked");
+        }
+        else {
+            String[] splited = sites.split("\\s+");
+            for (String s : splited) {
+                blockedWebsites.add(s);
+                System.out.println(s + " blocked successfully");
+            }
         }
         scanner.close();
             
