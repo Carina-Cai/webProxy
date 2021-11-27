@@ -24,6 +24,6 @@ Open a web browser and point to the destination website, e.g., www.baidu.com.
 
 ``http://localhost:3310/www.baidu.com``
 
-## Limitations:
+## Limitations
 
 This web-proxy may not be able to display all contents from any chosen website due to restrictions on the user agents.
