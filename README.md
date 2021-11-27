@@ -20,7 +20,9 @@ Run WebProxy.class with a specifying port number, e.g., 4600.
 
 ``java WebProxy 4600``
 
-Input the website(s) that you want to block and separate them with space, e.g., 'www.anu.edu.au www.. Press enter to continue. 
+Input the website(s) that you want to block and separate them with space, e.g., www.anu.edu.au and www.github.com. Press enter to continue. Otherwise, if you don't want to block any website, just press enter.
+
+``www.anu.edu.au www.github.com``
 
 Open a web browser and point to the destination website, e.g., www.baidu.com.
 
