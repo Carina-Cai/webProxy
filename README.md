@@ -16,9 +16,11 @@ Compile WebProxy.java.
 
 ``javac WebProxy.java``
 
-Run WebProxy.class with a specifying port number, e.g., 8800.
+Run WebProxy.class with a specifying port number, e.g., 4600.
 
-``java WebProxy 8800``
+``java WebProxy 4600``
+
+Input the website(s) that you want to block and separate them with space, e.g., 'www.anu.edu.au www.. Press enter to continue. 
 
 Open a web browser and point to the destination website, e.g., www.baidu.com.
 
